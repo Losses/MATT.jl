@@ -22,7 +22,6 @@ app = SplitView([
     ]),
     StackView([
         txt
-    ])
-])
+    ])])
 
 run_app(app)
