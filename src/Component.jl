@@ -2,72 +2,143 @@ using Parameters, UUIDs
 
 abstract type Component end
 
-@with_kw struct InputComponent{T}
+@with_kw struct InputComponent{T} <: Component
     hash::UUID = uuid4()
     component::String
     default::T
-    parameters:: Union(Dict{String, Any}, Nothing)
+    parameters:: Union{Dict{String, Any}, Nothing}
 end
 
-abstract type InputComponent <: Component
-
-@with_kw struct StaticComponent
+@with_kw struct StaticComponent <: Component
     hash::UUID = uuid4()
     component::String
-    parameters:: Union(Dict{String, Any}, Nothing)
+    parameters:: Union{Dict{String, Any}, Nothing}
     child::Vector{Component}
 end
 
-abstract type StaticComponent <: Component
+@with_kw struct Bind
+    hash::UUID = uuid4()
+    variable::String
+    component::InputComponent
+end
+
+@with_kw struct BindSet
+    hash::UUID = uuid4()
+    binds::Array{Bind}
+end
 
 @with_kw struct OutputCallback
     hash::UUID = uuid4()
-    bind::Array{InputComponent}
+    binds::BindSet
     fn::Function
 end
 
 @with_kw struct UpdateScope
+    hash::UUID = uuid4()
+    binds::BindSet
 end
 
-@with_kw struct OutputComponent{T}
+@with_kw struct OutputComponent{T} <: Component
     hash::UUID = uuid4()
     callback::OutputCallback
-    parameters::Union(Dict{String, Any}, Nothing)
+    parameters::Union{Dict{String, Any}, Nothing}
 end
 
-abstract type OutputComponent <: Component
+macro bind_set(binds)
+    if binds.head == :...
+        local returned_bind = eval(binds.args[1])
+        local returned_bind_type = typeof(returned_bind)
 
-macro output_fn(bind, block)
-    local fn_block = [block]
-    local para_types::Vector{String} = []
-
-    for i in 1:length(bind.args)
-        append!(para_types, [string(bind.args[i])])
-    end
-
-    return quote
-        local bind = $(bind)
-        local para_types = $(para_types)
-        local call_paras::Vector{Expr} = [Expr(:(::), :__update_hash, UUID)]
-
-        for i in 1:length(bind)
-            local para_name = Symbol(para_types[i])
-            local para_type = typeof(bind[i]).parameters[1]
-            local var_def = Expr(:(::), para_name, para_type)
-
-            append!(call_paras, [var_def])
+        if returned_bind_type !== BindSet
+            throw(ArgumentError("`binsSet` expected, but " * string(returned_bind) * " given"))
         end
 
-        local fn_paras = Expr(:tuple, Expr(:parameters, call_paras...))
-        local fn_block = $(fn_block)
-        local fn_expr = Expr(:function, fn_paras, fn_block[1])
+        return returned_bind
+    end
+
+    if binds.head !== :tuple
+        throw(ArgumentError("binds should be tuple, " * string(binds.head) * " provided"))
+    end
+
+    local parsed_binds::Vector{Bind} = []
+
+    for i in 1:length(binds.args)
+        if typeof(binds.args[i]) == Expr
+            if binds.args[i].head !== :...
+                throw(ArgumentError("unknown syntax"))
+            end
+
+            local bind_set = eval(binds.args[i].args[1])
+
+            if typeof(bind_set) != BindSet
+                throw(ArgumentError("`BindSet` expected, but " * string(typeof(bind_set)) * " given"))
+            end
+
+            for bind in bind_set.binds
+                append!(parsed_binds, [Bind(
+                    variable = bind.variable,
+                    component = bind.component
+                )])
+            end
+        elseif typeof(binds.args[i]) == Symbol
+            local bind_variable = string(binds.args[i])
+            local bind_component = eval(binds.args[i])
+            local component_type = typeof(bind_component)
+
+            if !(component_type <: InputComponent)
+                throw(ArgumentError(bind_variable * " is expected to be `InputComponent`, but " * string(component_type) * " given"))
+            end
+
+            append!(parsed_binds, [Bind(
+                variable = bind_variable,
+                component = bind_component
+            )])
+        else
+            throw(ArgumentError("element of " * string(binds.args[i]) * " should be `Expr` or `Symbol`, " * string(typeof(binds.args[i])) * " provided"))
+        end
+    end
+
+    return BindSet(
+        binds = parsed_binds
+    )
+end
+
+macro output_fn(definition, block)
+    if definition.head !== :(::)
+        throw(ArgumentError("bind definition must have two parts, concate with `::`"))
+    end
+
+    local binds = definition.args[1]
+    local output_type = definition.args[2]
+
+    local bind_set = eval(:(@bind_set $binds))
+
+    local call_paras::Vector{Expr} = [Expr(:(::), :__update_hash, UUID)]
+
+    for i in 1:length(bind_set.binds)
+        local para_name = Symbol(bind_set.binds[i].variable)
+        local para_type = typeof(bind_set.binds[i].component).parameters[1]
+        local var_def = Expr(:(::), para_name, para_type)
+
+        append!(call_paras, [var_def])
+    end
+
+    local fn_paras = Expr(
+        :(::), Expr(
+            :call, :__internal_output_callback, Expr(
+                :parameters, call_paras...
+            )
+        ), Symbol(output_type))
+
+        local fn_expr = Expr(:function, fn_paras, block)
         local fn = eval(fn_expr)
 
+        print(fn_expr)
+
         OutputCallback(
-            bind = $(bind),
+            binds = bind_set,
             fn = fn
         )
-    end
 end
 
 function Toggle(
@@ -142,7 +213,7 @@ end
 function TextOutput(
     callback::OutputCallback;
     monospace::Bool = false)
-    OutputComponent(
+    OutputComponent{String}(
         callback = callback,
         parameters = Dict(
             "monospace" => monospace

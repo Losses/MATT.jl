@@ -4,7 +4,9 @@ tog = Toggle()
 cho = Choice()
 sli = Slider()
 
-update_text = @output_fn [tog, cho, sli] begin
+b_set = @bind_set (tog, cho, sli)
+
+update_text = @output_fn (b_set...)::String begin
     print(__update_hash)
 
     return "tog: " * string(tog) * ", cho: " * string(cho) * "sli: " * string(sli)
