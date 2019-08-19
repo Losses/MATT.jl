@@ -13,7 +13,7 @@ end
     hash::UUID = uuid4()
     component::String
     parameters:: Union{Dict{String, Any}, Nothing}
-    child::Vector{Component}
+    children::Union{Vector{Component}, Nothing}
 end
 
 @with_kw struct Bind
@@ -29,7 +29,7 @@ end
 
 @with_kw struct OutputCallback
     hash::UUID = uuid4()
-    binds::BindSet
+    bind_set::BindSet
     fn::Function
 end
 
@@ -136,7 +136,7 @@ macro output_fn(definition, block)
         print(fn_expr)
 
         OutputCallback(
-            binds = bind_set,
+            bind_set = bind_set,
             fn = fn
         )
 end
@@ -222,20 +222,22 @@ function TextOutput(
 end
 
 function SplitView(
-    child::Vector{Component};
+    children::Vector{Component};
     widths::Vector{Int64})
     StaticComponent(
         component = "SplitView",
         parameters = Dict(
             "widths" => widths
-        )
+        ),
+        children = children
     )
 end
 
 function StackView(
-    child::Vector{Component})
+    children::Vector{Component})
     StaticComponent(
         component = "StackView",
-        parameters = nothing
+        parameters = nothing,
+        children = children
     )
 end
