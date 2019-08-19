@@ -40,6 +40,7 @@ end
 
 @with_kw struct OutputComponent{T} <: Component
     hash::UUID = uuid4()
+    component::String = "Text"
     callback::OutputCallback
     parameters::Union{Dict{String, Any}, Nothing}
 end
@@ -213,6 +214,7 @@ function TextOutput(
     monospace::Bool = false)
     OutputComponent{String}(
         callback = callback,
+        component = "Text", 
         parameters = Dict(
             "monospace" => monospace
         )
