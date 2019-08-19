@@ -1,4 +1,5 @@
 include("../src/Component.jl")
+include("../src/React.jl")
 
 tog = Toggle()
 cho = Choice()
@@ -23,5 +24,7 @@ app = SplitView([
     StackView([
         txt
     ])])
+
+parse_tree(app)
 
 run_app(app)
