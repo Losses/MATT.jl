@@ -6,13 +6,13 @@ abstract type Component end
     hash::UUID = uuid4()
     component::String
     default::T
-    parameters:: Union{Dict{String, Any}, Nothing}
+    parameters::Union{Dict{String, Any}, Nothing}
 end
 
 @with_kw struct StaticComponent <: Component
     hash::UUID = uuid4()
     component::String
-    parameters:: Union{Dict{String, Any}, Nothing}
+    parameters::Union{Dict{String, Any}, Nothing}
     children::Union{Vector{Component}, Nothing}
 end
 
@@ -133,8 +133,6 @@ macro output_fn(definition, block)
         local fn_expr = Expr(:function, fn_paras, block)
         local fn = eval(fn_expr)
 
-        print(fn_expr)
-
         OutputCallback(
             bind_set = bind_set,
             fn = fn
@@ -222,8 +220,8 @@ function TextOutput(
 end
 
 function SplitView(
-    children::Vector{Component};
-    widths::Vector{Int64})
+    children::Vector{T} where T <: Component;
+    widths::Union{Vector{Int64}, Nothing} = nothing)
     StaticComponent(
         component = "SplitView",
         parameters = Dict(
@@ -234,7 +232,7 @@ function SplitView(
 end
 
 function StackView(
-    children::Vector{Component})
+    children::Vector{T} where T <: Component)
     StaticComponent(
         component = "StackView",
         parameters = nothing,
