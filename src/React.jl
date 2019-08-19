@@ -5,8 +5,8 @@ include("./Component.jl");
 @with_kw struct JSXElement
     hash::UUID = uuid4()
     tag::String = "div"
-    props::Union{Dict{String, Any}, Nothing}
-    children::Union{Vector{JSXElement}, Nothing}
+    props::Union{Dict{String, Any}, Nothing} = nothing
+    children::Union{Vector{JSXElement}, Nothing} = nothing
 end
 
 # BindSet -> Input
@@ -24,7 +24,7 @@ function parse_tree(x::InputComponent)
         hash = x.hash,
         tag = x.component,
         props = x.parameters,
-        children = Nothing
+        children = nothing
     )
 
     return (jsx_tree, update_rules)
@@ -37,13 +37,13 @@ function parse_tree(x::OutputComponent)
         hash = x.hash,
         tag = x.component,
         props = x.parameters,
-        chidren = Nothing
+        children = nothing
     )
 
     local inputs::Vector{UUID} = []
 
     for bind in x.callback.bind_set.binds
-        append!(inputs, bind.component.hash)
+        append!(inputs, [bind.component.hash])
     end
 
     append!(update_rules, [UpdateRule(
@@ -75,7 +75,7 @@ function parse_tree(x::StaticComponent)
         hash = x.hash,
         tag = x.component,
         props = x.parameters,
-        chidren = children
+        children = children
     )
 
     return (jsx_tree, update_rules)
