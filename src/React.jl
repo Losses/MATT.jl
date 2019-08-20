@@ -14,7 +14,7 @@ end
 # BindSet -> Input
 @with_kw struct UpdateRule
     # Should be the hash of `BindSet`
-    bind::UUID = uuid4()
+    bind_set::UUID = uuid4()
     input::Vector{UUID}
     output::UUID
 end
@@ -120,6 +120,8 @@ end
 @with_kw struct MATTApp
     hash::UUID = uuid4()
     jsx_tree::JSXElement
+    binds::Dict{UUID, Bind}
+    bind_sets::Dict{UUID, BindSet}
     input_components::Dict{UUID, InputComponent}
     output_components::Dict{UUID, OutputComponent}
     update_rules::Dict{UUID, Vector{UpdateRule}}
@@ -142,24 +144,30 @@ function setup_app(
     update_rules::Vector{UpdateRule},
     components::Vector{T} where T <: Component)
 
+    local input_components = Dict{UUID, InputComponent}()
+    local output_components = Dict{UUID, OutputComponent}()
+    local binds = Dict{UUID, Vector{Bind}}()
+    local bind_sets = Dict{UUID, Vector{BindSet}}()
     local input_bind = Dict{UUID, Vector{UUID}}()
     local bind_input = Dict{UUID, Vector{UUID}}()
     local bind_output = Dict{UUID, Vector{UUID}}()
+    local update_rules_dict = Dict{UUID, Vector{UpdateRule}}()
 
     for rule in update_rules
-        bind_input[rule.bind] = rule.input
+        bind_input[rule.bind_set] = rule.input
+        update_rules_dict[rule.bind_set] = rule
 
-        if haskey(bind_output, rule.bind)
-            append!(bind_output[rule.bind], [rule.output])
+        if haskey(bind_output, rule.bind_set)
+            append!(bind_output[rule.bind_set], [rule.output])
         else
-            bind_output[rule.bind] = [rule.output]
+            bind_output[rule.bind_set] = [rule.output]
         end
 
         for input_hash in rule.input
             if haskey(input_bind, input_hash)
-                append!(input_bind[input_hash], [rule.bind])
+                append!(input_bind[input_hash], [rule.bind_set])
             else
-                input_bind[input_hash] = [rule.bind]
+                input_bind[input_hash] = [rule.bind_set]
             end
         end
     end
@@ -170,12 +178,33 @@ function setup_app(
         "bind_input" => bind_input,
     )
 
+    for component in components
+        if typeof(component) <: InputComponent
+            input_components[component.hash] = component
+        elseif typeof(component) <: OutputComponent
+            output_components[component.hash] = component
+
+            local bind_set_hash = component.bind_set.hash
+            !haskey(bind_sets, bind_set_hash) && bind_sets[bind_set_hash] = component.bind_set
+        end
+    end
+
+    for bind_set in values(bind_sets)
+        for bind in bind_set.binds
+            !haskey(binds, bind.hash) && binds[bind.hash] = bind
+        end
+    end
+
     MATTApp(
         jsx_tree = jsx_tree,
-        update_rules = update_rules,
+        binds = binds,
+        bind_sets = bind_sets,
+        input_components = input_components,
+        output_components = output_components,
+        update_rules = update_rules_dict,
         input_bind = input_bind,
         bind_input = bind_input,
+        bind_output = bind_output,
         serialized_app = json(app_ui_def),
-        bind_output = bind_output
     )
 end
