@@ -100,6 +100,7 @@ end
     jsx_tree::JSXElement
     update_rules::Vector{UpdateRule}
     input_bind::Dict{UUID, Vector{UUID}}
+    bind_input::Dict{UUID, Vector{UUID}}
     serialized_app::String
     bind_output::Dict{UUID, Vector{UUID}}
 end
@@ -116,13 +117,13 @@ function setup_app(
     jsx_tree::JSXElement,
     update_rules::Vector{UpdateRule})
 
-    # Input -> Bind
     local input_bind = Dict{UUID, Vector{UUID}}()
-
-    # Bind -> Output
+    local bind_input = Dict{UUID, Vector{UUID}}()
     local bind_output = Dict{UUID, Vector{UUID}}()
 
     for rule in update_rules
+        bind_input[rule.bind] = rule.input
+
         if haskey(bind_output, rule.bind)
             append!(bind_output[rule.bind], [rule.output])
         else
@@ -140,13 +141,15 @@ function setup_app(
 
     local app_ui_def = Dict(
         "jsx_tree" => jsx_tree,
-        "input_bind" => input_bind
+        "input_bind" => input_bind,
+        "bind_input" => bind_input,
     )
 
     MATTApp(
         jsx_tree = jsx_tree,
         update_rules = update_rules,
         input_bind = input_bind,
+        bind_input = bind_input,
         serialized_app = json(app_ui_def),
         bind_output = bind_output
     )
