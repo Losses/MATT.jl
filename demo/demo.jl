@@ -1,3 +1,5 @@
+Random.seed!(2333)
+
 include("../src/Component.jl");
 include("../src/React.jl");
 include("../src/Server.jl");
