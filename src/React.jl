@@ -102,6 +102,8 @@ end
     jsx_tree::JSXElement
     update_rules::Vector{UpdateRule}
     input_bind::Dict{UUID, Vector{UUID}}
+    parsed_jsx_tree::String
+    parsed_input_bind::String
     bind_output::Dict{UUID, Vector{UUID}}
 end
 
@@ -137,12 +139,14 @@ function setup_app(
                 input_bind[input_hash] = [rule.bind]
             end
         end
-
-        MattApp(
-            jsx_tree = jsx_tree,
-            update_rules = update_rules,
-            input_bind = input_bind,
-            bind_output = bind_output
-        )
     end
+
+    MattApp(
+        jsx_tree = jsx_tree,
+        update_rules = update_rules,
+        input_bind = input_bind,
+        parsed_jsx_tree = json(jsx_tree),
+        parsed_input_bind = json(input_bind),
+        bind_output = bind_output
+    )
 end
