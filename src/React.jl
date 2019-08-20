@@ -1,7 +1,5 @@
 using Parameters, UUIDs, JSON
 
-include("./Component.jl");
-
 JSON.lower(x::UUID) = string(x)
 
 @with_kw struct JSXElement
@@ -97,13 +95,12 @@ function parse_tree(x::StaticComponent)
     )
 end
 
-@with_kw struct MattApp
+@with_kw struct MATTApp
     hash::UUID = uuid4()
     jsx_tree::JSXElement
     update_rules::Vector{UpdateRule}
     input_bind::Dict{UUID, Vector{UUID}}
-    parsed_jsx_tree::String
-    parsed_input_bind::String
+    serialized_app::String
     bind_output::Dict{UUID, Vector{UUID}}
 end
 
@@ -141,12 +138,16 @@ function setup_app(
         end
     end
 
-    MattApp(
+    local app_ui_def = Dict(
+        "jsx_tree" => jsx_tree,
+        "input_bind" => input_bind
+    )
+
+    MATTApp(
         jsx_tree = jsx_tree,
         update_rules = update_rules,
         input_bind = input_bind,
-        parsed_jsx_tree = json(jsx_tree),
-        parsed_input_bind = json(input_bind),
+        serialized_app = json(app_ui_def),
         bind_output = bind_output
     )
 end
