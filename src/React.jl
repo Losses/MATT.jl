@@ -1,6 +1,8 @@
-using Parameters, UUIDs
+using Parameters, UUIDs, JSON
 
 include("./Component.jl");
+
+JSON.lower(x::UUID) = string(x)
 
 @with_kw struct JSXElement
     hash::UUID = uuid4()
@@ -27,7 +29,10 @@ function parse_tree(x::InputComponent)
         children = nothing
     )
 
-    return (jsx_tree, update_rules)
+    return ParsedJSXTree(
+        jsx_tree = jsx_tree,
+        update_rules = update_rules
+    )
 end
 
 function parse_tree(x::OutputComponent)
@@ -52,7 +57,15 @@ function parse_tree(x::OutputComponent)
         output = x.hash
     )])
 
-    return (jsx_tree, update_rules)
+    return ParsedJSXTree(
+        jsx_tree = jsx_tree,
+        update_rules = update_rules
+    )
+end
+
+@with_kw struct ParsedJSXTree
+    jsx_tree::JSXElement
+    update_rules::Vector{UpdateRule}
 end
 
 function parse_tree(x::StaticComponent)
@@ -62,10 +75,10 @@ function parse_tree(x::StaticComponent)
         local children::Vector{JSXElement} = []
 
         for i in x.children
-            (sub_jsx_tree, sub_update_rules) = parse_tree(i)
+            local parsed_tree = parse_tree(i)
 
-            append!(update_rules, sub_update_rules)
-            append!(children, [sub_jsx_tree])
+            append!(update_rules, parsed_tree.update_rules)
+            append!(children, [parsed_tree.jsx_tree])
         end
     else
         local children = nothing
@@ -78,7 +91,10 @@ function parse_tree(x::StaticComponent)
         children = children
     )
 
-    return (jsx_tree, update_rules)
+    return ParsedJSXTree(
+        jsx_tree = jsx_tree,
+        update_rules = update_rules
+    )
 end
 
 @with_kw struct MattApp
@@ -89,15 +105,23 @@ end
     bind_output::Dict{UUID, Vector{UUID}}
 end
 
+function setup_app(x::ParsedJSXTree)
+    setup_app(x.jsx_tree, x.update_rules)
+end
+
+function setup_app(x::StaticComponent)
+    setup_app(parse_tree(x))
+end
+
 function setup_app(
     jsx_tree::JSXElement,
     update_rules::Vector{UpdateRule})
 
     # Input -> Bind
-    local input_bind::Dict{UUID, Vector{UUID}} = Dict()
+    local input_bind = Dict{UUID, Vector{UUID}}()
 
     # Bind -> Output
-    local bind_output::Dict{UUID, Vector{UUID}} = Dict()
+    local bind_output = Dict{UUID, Vector{UUID}}()
 
     for rule in update_rules
         if haskey(bind_output, rule.bind)
@@ -108,9 +132,9 @@ function setup_app(
 
         for input_hash in rule.input
             if haskey(input_bind, input_hash)
-                append!(input_hash[input_hash], [rule.bind])
+                append!(input_bind[input_hash], [rule.bind])
             else
-                input_hash[input_hash] = [rule.bind]
+                input_bind[input_hash] = [rule.bind]
             end
         end
 
