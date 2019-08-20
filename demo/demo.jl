@@ -1,5 +1,6 @@
 include("../src/Component.jl");
 include("../src/React.jl");
+include("../src/Server.jl");
 
 tog = Toggle()
 cho = Choice()
@@ -15,7 +16,7 @@ end
 
 txt = TextOutput(update_text)
 
-ui = SplitView([
+app = SplitView([
     StackView([
         tog,
         cho,
@@ -24,7 +25,5 @@ ui = SplitView([
     StackView([
         txt
     ])])
-
-app = setup_app(ui)
 
 run_app(app)
