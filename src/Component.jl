@@ -55,7 +55,7 @@ macro bind_set(binds)
         end
 
         local bind_set = [Bind(
-            variable = string(bind_component),
+            variable = string(binds),
             component = bind_component
         )]
 
