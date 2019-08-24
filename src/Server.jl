@@ -34,11 +34,13 @@ end
 
 macro validate_input(conn, condition, error_msg)
     quote
-        if $condition
+        if $(esc(condition))
+            @error $error_msg
+
             local response = json(
                 Dict{String, String}(
                     "command" => "error",
-                    "message" => error_msg
+                    "message" => $error_msg
                 )
             )
 
