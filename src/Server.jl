@@ -125,7 +125,7 @@ function ws_io(x, app::MATTApp)
             local output_fn_paras = Vector{Any}([Symbol("output_fn")])
 
             for bind in bind_set.binds
-                local input_hash = bind.input.hash
+                local input_hash = bind.component.hash
                 local input_hash_str = string(input_hash)
                 if !haskey(parsed_data["input"], input_hash_str)
                     paras_valid = false
@@ -133,7 +133,7 @@ function ws_io(x, app::MATTApp)
                 end
 
                 local input_data = parsed_data["input"][input_hash_str]
-                local input_type = app.input_components[input_hash].parameters[1]
+                local input_type = typeof(app.input_components[input_hash]).parameters[1]
                 local input_var_name = app.binds[bind.hash].variable
                 local parsed_input = try input_type(input_data) catch e; end
 
@@ -142,7 +142,7 @@ function ws_io(x, app::MATTApp)
                     break
                 end
 
-                append!(output_fn_paras, [Expr(:kw, [Symbol(input_var_name), parsed_input])])
+                append!(output_fn_paras, [Expr(:kw, Symbol(input_var_name), parsed_input)])
             end
 
             @validate_input(conn, !paras_valid, "Mismatch input type")
