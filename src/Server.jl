@@ -122,7 +122,7 @@ function ws_io(x, app::MATTApp)
             local bind_set = app.bind_sets[bind_set_hash]
             local paras_valid = true
 
-            local output_fn_paras = Vector{Any}([Symbol("output_fn")])
+            local output_fn_paras = Vector{Pair{Symbol, Any}}([Pair(:__update_hash, update_hash)])
 
             for bind in bind_set.binds
                 local input_hash = bind.component.hash
@@ -142,7 +142,7 @@ function ws_io(x, app::MATTApp)
                     break
                 end
 
-                append!(output_fn_paras, [Expr(:kw, Symbol(input_var_name), parsed_input)])
+                append!(output_fn_paras, [Pair(Symbol(input_var_name), parsed_input)])
             end
 
             @validate_input(conn, !paras_valid, "Mismatch input type")
@@ -152,10 +152,10 @@ function ws_io(x, app::MATTApp)
             local output_hashes = app.bind_output[bind_set.hash]
 
             for output_hash in output_hashes
-                local output_fn = app.output_components[output_hash].callback.fn
-                local call_expr = Expr(:call, output_fn_paras...)
+                local callback = app.output_components[output_hash].callback
+                local call_result = callback.fn(;output_fn_paras...)
+                local encoded_output = ws_encode(call_result)
 
-                local call_result = ws_encode(eval(output_hash))
                 local response = json(
                     Dict(
                         "command" => "update",
@@ -189,7 +189,9 @@ function run_app(x::MATTApp; port::Int64 = 2333)
         Mux.wclose,
         Mux.notfound());
 
-    @info "MATT initialized"
+    local app_hash = x.hash
+
+    @info "MATT initialized" app_hash
 
     WebSockets.serve(
         WebSockets.ServerWS(
