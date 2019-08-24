@@ -63,7 +63,7 @@ function parse_tree(x::OutputComponent)
     end
 
     append!(update_rules, [UpdateRule(
-        bind = x.callback.bind_set.hash,
+        bind_set = x.callback.bind_set.hash,
         input = inputs,
         output = x.hash
     )])
@@ -124,7 +124,7 @@ end
     bind_sets::Dict{UUID, BindSet}
     input_components::Dict{UUID, InputComponent}
     output_components::Dict{UUID, OutputComponent}
-    update_rules::Dict{UUID, Vector{UpdateRule}}
+    update_rules::Dict{UUID, UpdateRule}
     input_bind::Dict{UUID, Vector{UUID}}
     bind_input::Dict{UUID, Vector{UUID}}
     bind_output::Dict{UUID, Vector{UUID}}
@@ -151,7 +151,7 @@ function setup_app(
     local input_bind = Dict{UUID, Vector{UUID}}()
     local bind_input = Dict{UUID, Vector{UUID}}()
     local bind_output = Dict{UUID, Vector{UUID}}()
-    local update_rules_dict = Dict{UUID, Vector{UpdateRule}}()
+    local update_rules_dict = Dict{UUID, UpdateRule}()
 
     for rule in update_rules
         bind_input[rule.bind_set] = rule.input
@@ -185,13 +185,15 @@ function setup_app(
             output_components[component.hash] = component
 
             local bind_set_hash = component.bind_set.hash
-            !haskey(bind_sets, bind_set_hash) && bind_sets[bind_set_hash] = component.bind_set
+            if !haskey(bind_sets, bind_set_hash)
+                bind_sets[bind_set_hash] = component.bind_set
+            end
         end
     end
 
     for bind_set in values(bind_sets)
         for bind in bind_set.binds
-            !haskey(binds, bind.hash) && binds[bind.hash] = bind
+            !haskey(binds, bind.hash) && (binds[bind.hash] = bind)
         end
     end
 

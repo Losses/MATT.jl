@@ -46,15 +46,31 @@ end
 end
 
 macro bind_set(binds)
-    if binds.head == :...
-        local returned_bind = eval(binds.args[1])
-        local returned_bind_type = typeof(returned_bind)
+    if typeof(binds) == Symbol
+        local bind_component = eval(binds)
+        local component_type = typeof(bind_component)
 
-        if returned_bind_type !== BindSet
+        if !(component_type <: InputComponent)
+            throw(ArgumentError(bind_variable * " is expected to be `InputComponent`, but " * string(component_type) * " given"))
+        end
+
+        local bind_set = [Bind(
+            variable = string(bind_component),
+            component = bind_component
+        )]
+
+        return BindSet(binds = bind_set)
+    end
+
+    if binds.head == :...
+        local bind_set = eval(binds.args[1])
+        local bind_set_type = typeof(bind_set)
+
+        if !(bind_set_type <: BindSet)
             throw(ArgumentError("`binsSet` expected, but " * string(returned_bind) * " given"))
         end
 
-        return returned_bind
+        return bind_set
     end
 
     if binds.head !== :tuple
@@ -99,9 +115,7 @@ macro bind_set(binds)
         end
     end
 
-    return BindSet(
-        binds = parsed_binds
-    )
+    return BindSet(binds = parsed_binds)
 end
 
 macro output_fn(definition, block)
@@ -214,7 +228,7 @@ function TextOutput(
     monospace::Bool = false)
     OutputComponent{String}(
         callback = callback,
-        component = "Text", 
+        component = "Text",
         parameters = Dict(
             "monospace" => monospace
         )
