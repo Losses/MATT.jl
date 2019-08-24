@@ -152,8 +152,8 @@ function ws_io(x, app::MATTApp)
             local output_hashes = app.bind_output[bind_set.hash]
 
             for output_hash in output_hashes
-                local output_fn = app.outputs[output_hash].callback.fn
-                local call_expr = Expr(:call, output_fn_paras)
+                local output_fn = app.output_components[output_hash].callback.fn
+                local call_expr = Expr(:call, output_fn_paras...)
 
                 local call_result = ws_encode(eval(output_hash))
                 local response = json(
