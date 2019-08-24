@@ -10,7 +10,7 @@ end
 @with_kw struct EncodedOutput
     type::String
     content::String
-    parameters::Dict{String, String}
+    parameters::Union{Dict{String, String}, Nothing} = nothing
 end
 
 function ws_encode(x::String)
