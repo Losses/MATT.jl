@@ -95,7 +95,7 @@ function parse_tree(x::StaticComponent)
 
             append!(update_rules, parsed_tree.update_rules)
             append!(children, [parsed_tree.jsx_tree])
-            append!(components, [i])
+            append!(components, parsed_tree.components)
         end
     else
         local children = nothing
@@ -146,8 +146,8 @@ function setup_app(
 
     local input_components = Dict{UUID, InputComponent}()
     local output_components = Dict{UUID, OutputComponent}()
-    local binds = Dict{UUID, Vector{Bind}}()
-    local bind_sets = Dict{UUID, Vector{BindSet}}()
+    local binds = Dict{UUID, Bind}()
+    local bind_sets = Dict{UUID, BindSet}()
     local input_bind = Dict{UUID, Vector{UUID}}()
     local bind_input = Dict{UUID, Vector{UUID}}()
     local bind_output = Dict{UUID, Vector{UUID}}()
@@ -184,9 +184,9 @@ function setup_app(
         elseif typeof(component) <: OutputComponent
             output_components[component.hash] = component
 
-            local bind_set_hash = component.bind_set.hash
+            local bind_set_hash = component.callback.bind_set.hash
             if !haskey(bind_sets, bind_set_hash)
-                bind_sets[bind_set_hash] = component.bind_set
+                bind_sets[bind_set_hash] = component.callback.bind_set
             end
         end
     end
