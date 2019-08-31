@@ -8,7 +8,7 @@ JSON.lower(x::UUID) = string(x)
     props::Union{Dict{String, Any}, Nothing} = nothing
     children::Union{Vector{JSXElement}, Nothing} = nothing
     data_type::Union{DataType, Nothing} = nothing
-    component_type::String #Input? Output? Static?
+    component_type::String # Input? Output? Static?
 end
 
 # BindSet -> Input
@@ -23,12 +23,18 @@ function parse_tree(x::InputComponent)
     local update_rules = Vector{UpdateRule}()
     local components = Vector{Component}()
 
+    local props = isnothing(x.parameters) ? x.parameters : Dict{String, Any}()
+
+    if !isnothing(x.default)
+        props["value"] = x.default
+    end
+
     append!(components, [x])
 
     local jsx_tree = JSXElement(
         hash = x.hash,
         tag = x.component,
-        props = x.parameters,
+        props = props,
         children = nothing,
         component_type = "input",
         data_type = typeof(x).parameters[1]
