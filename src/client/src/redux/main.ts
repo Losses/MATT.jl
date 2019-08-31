@@ -1,45 +1,20 @@
 import { createStore, combineReducers } from 'redux';
-import { uiReducer, UIStore, INITIAL_UI_STORE } from './uiStore';
+import { uiReducer, UIStore } from './uiStore';
+import { inputReducer, InputStore } from './inputStore';
+import { outputReducer, OutputStore } from './outputStore';
 
 export type HashTable = { [hash: string]: string[] };
 
-export interface InputState<T extends {}> {
-  value: any;
-  replacedProps: T;
-}
-
-export interface InputSubStore {
-  [input_hash: string]: InputState<any>;
-};
-
-export interface OutputState<T extends {}> {
-  value: any;
-  parameters: T;
-}
-
-export interface OutputSubStore {
-  [input_hash: string]: OutputState<any>;
-};
-
-export interface MATTAction {
-  type: string;
-  [key: string]: any;
-};
-
 export interface MATTStore {
   ui: UIStore;
-  inputs: InputSubStore;
-  outputs: OutputSubStore;
+  inputs: InputStore;
+  outputs: OutputStore;
 };
 
-export const INITIAL_STORE: MATTStore = {
-  ui: INITIAL_UI_STORE,
-  inputs: {},
-  outputs: {}
-}
-
 const rootReducer = combineReducers({
-  ui: uiReducer
+  ui: uiReducer,
+  inputs: inputReducer, 
+  outputs: outputReducer
 })
 
 export default createStore(rootReducer);

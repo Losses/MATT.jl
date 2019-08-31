@@ -1,6 +1,6 @@
 import *  as React from 'react';
 
-import store, { HashTable, MATTStore, INITIAL_STORE } from './main';
+import store, { HashTable } from './main';
 import FabricComponents from '../components/Fabric';
 
 export type UIStatus = 'success' | 'error' | 'fetching' | 'not-ready';
@@ -62,7 +62,7 @@ interface UpdateUIAction {
 
 export type UIAction = StartFetchAction | ReportErrorAction | UpdateUIAction;
 
-export const INITIAL_UI_STORE: UIStore = {
+const INITIAL_UI_STORE: UIStore = {
   status: 'not-ready'
 }
 
@@ -71,16 +71,16 @@ export const uiReducer = (
   action: UIAction
 ):UIStore => {
   switch (action.type) {
-    case 'start-fetch-ui':
+    case START_FETCH_UI:
       return {
         status: 'fetching'
       }
-    case 'report-fetch-ui-error':
+    case REPORT_FETCH_UI_ERROR:
       return {
         status: 'error',
         error: action.error
       }
-    case 'update-ui':
+    case UPDATE_UI:
       return {
         status: 'success',
         element: action.element,
