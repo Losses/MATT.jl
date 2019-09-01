@@ -25,3 +25,11 @@ export const outputReducer = (
       return store
   }
 }
+
+export const updateOutput = (output_hash: string, value: any): UpdateOutputAction => {
+  return {
+    type: UPDATE_OUTPUT,
+    output: output_hash,
+    value: value
+  }
+}

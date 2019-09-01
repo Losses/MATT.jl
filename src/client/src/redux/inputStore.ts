@@ -1,3 +1,5 @@
+import store from './main';
+
 export interface InputStore {
   [inputHash: string]: any
 }
@@ -24,4 +26,18 @@ export const inputReducer = (
     default:
       return store
   }
+}
+
+export const updateInput = (inputHash: string, value: any) => {
+  const state = store.getState();
+
+  store.dispatch({
+    type: UPDATE_INPUT,
+    input: inputHash,
+    value: value
+  });
+
+  if (!("updateInput" in state.connection)) return
+
+  state.connection.updateInput(inputHash);
 }

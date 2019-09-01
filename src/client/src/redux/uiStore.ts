@@ -1,7 +1,7 @@
 import *  as React from 'react';
 
 import store, { HashTable } from './main';
-import { UPDATE_INPUT } from './inputStore';
+import { UPDATE_INPUT, updateInput } from './inputStore';
 import FabricComponents from '../components/Fabric';
 
 export type UIStatus = 'success' | 'error' | 'fetching' | 'not-ready' | 'updating';
@@ -110,12 +110,13 @@ const parseJsxTreeDefinition = (x: JSXTreeDefinition): React.ReactElement => {
   props = { ...x.props, __hash: x.hash };
 
   if (x.component_type == 'input') {
-    const handleOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (!event.target) return false
-      store.dispatch({ type: UPDATE_INPUT, input: x.hash, value: event.target.value })
+
+      updateInput(x.hash, event.target.value);
     }
 
-    props = Object.assign(props, { onChange: handleOnChange });
+    props = Object.assign(props, { onChange: handleChange });
 
     store.dispatch({ type: UPDATE_INPUT, input: x.hash, value: x.props.value })
   }

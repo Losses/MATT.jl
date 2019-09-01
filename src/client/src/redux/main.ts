@@ -18,6 +18,6 @@ const rootReducer = combineReducers({
   inputs: inputReducer, 
   outputs: outputReducer,
   connection: connectionReducer
-})
+});
 
 export default createStore(rootReducer);
