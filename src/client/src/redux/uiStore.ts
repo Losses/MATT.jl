@@ -3,6 +3,7 @@ import *  as React from 'react';
 import store, { HashTable } from './main';
 import { UPDATE_INPUT, updateInput } from './inputStore';
 import FabricComponents from '../components/Fabric';
+import WrapOutput from '../components/WrapOutput';
 
 export type UIStatus = 'success' | 'error' | 'fetching' | 'not-ready' | 'updating';
 
@@ -104,24 +105,32 @@ export const uiReducer = (
 }
 
 const parseJsxTreeDefinition = (x: JSXTreeDefinition): React.ReactElement => {
-  let props;
+  let props, component;
+
   const children = x.children ? x.children.map(parseJsxTreeDefinition) : null;
 
+  component = componentSet[x.tag];
   props = { ...x.props, __hash: x.hash };
 
-  if (x.component_type == 'input') {
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (!event.target) return false
+  switch (x.component_type) {
+    case 'input':
+      const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target) return false
 
-      updateInput(x.hash, event.target.value);
-    }
+        updateInput(x.hash, event.target.value);
+      }
 
-    props = Object.assign(props, { onChange: handleChange });
+      props = Object.assign(props, { onChange: handleChange });
 
-    store.dispatch({ type: UPDATE_INPUT, input: x.hash, value: x.props.value })
+      store.dispatch({ type: UPDATE_INPUT, input: x.hash, value: x.props.value });
+
+      break;
+    case 'output':
+      component = WrapOutput(component, x.hash);
+      break;
   }
 
-  return React.createElement(FabricComponents[x.tag], props, children);
+  return React.createElement(component, props, children);
 }
 
 export const getInitialUI = async () => {
