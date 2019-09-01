@@ -2,7 +2,7 @@ import *  as React from 'react';
 
 import store, { HashTable } from './main';
 import { UPDATE_INPUT, updateInput } from './inputStore';
-import FabricComponents from '../components/Fabric';
+import componentSet from '../components/Components';
 import WrapOutput from '../components/WrapOutput';
 
 export type UIStatus = 'success' | 'error' | 'fetching' | 'not-ready' | 'updating';
